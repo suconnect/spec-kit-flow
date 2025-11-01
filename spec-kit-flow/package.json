@@ -30,7 +30,10 @@
     "start": "cross-env NODE_ENV=development rsbuild dev --open",
     "test": "exit",
     "test:cov": "exit",
-    "watch": "exit 0"
+    "watch": "exit 0",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@douyinfe/semi-icons": "^2.80.0",
@@ -47,6 +50,7 @@
     "@flowgram.ai/panel-manager-plugin": "^1.0.2",
     "@flowgram.ai/runtime-interface": "^1.0.2",
     "@flowgram.ai/runtime-js": "^1.0.2",
+    "@tauri-apps/api": "^1.6.0",
     "@tiptap/react": "^3.10.1",
     "@tiptap/starter-kit": "^3.10.1",
     "classnames": "^2.5.1",
