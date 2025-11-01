@@ -3,104 +3,95 @@
  * ?? spec-kit ?????????????
  */
 
-import type { SpecKitPattern, SpecKitPatternType } from '../types/speckit'
+import type { SpecKitPattern } from '../types/speckit'
 
 /**
- * SpecKit ??????
+ * SpecKit ?????7??
  */
 export const SPEC_KIT_PATTERNS: SpecKitPattern[] = [
+  // 1. ??????
   {
     type: 'user-story',
-    match: /^????\s*(\d+)\s*-\s*(.+?)(?:?????(P\d+)?)?$/i,
-    extract: (text: string) => {
-      const match = text.match(/^????\s*(\d+)\s*-\s*(.+?)(?:?????(P\d+)?)?$/i)
+    match: /^????\s+(\d+)\s*-\s*(.+?)(?:?????(P\d+)?)?$/,
+    extract: (text) => {
+      const match = text.match(/^????\s+(\d+)\s*-\s*(.+?)(?:?????(P\d+)?)?$/)
       if (!match) return {}
-      
       return {
-        storyNumber: parseInt(match[1], 10),
+        storyNumber: parseInt(match[1]),
         title: match[2].trim(),
         priority: match[3] || undefined
       }
     }
   },
-  
+
+  // 2. ??????
   {
     type: 'acceptance-scenario',
-    match: /^????$/i,
+    match: /^????$/,
     extract: () => ({
       isAcceptanceSection: true
     })
   },
-  
+
+  // 3. ???????
   {
     type: 'functional-requirement',
     match: /^-\s*\*\*FR-(\d+)\*\*:/,
-    extract: (text: string) => {
+    extract: (text) => {
       const match = text.match(/^-\s*\*\*FR-(\d+)\*\*:/)
       if (!match) return {}
-      
       return {
-        requirementId: `FR-${match[1]}`
+        requirementId: `FR-${match[1]}`,
+        requirementType: 'functional'
       }
     }
   },
-  
+
+  // 4. ??????
   {
     type: 'success-criteria',
     match: /^-\s*\*\*SC-(\d+)\*\*:/,
-    extract: (text: string) => {
+    extract: (text) => {
       const match = text.match(/^-\s*\*\*SC-(\d+)\*\*:/)
       if (!match) return {}
-      
       return {
-        criteriaId: `SC-${match[1]}`
+        criteriaId: `SC-${match[1]}`,
+        criteriaType: 'success'
       }
     }
   },
-  
+
+  // 5. ??????
   {
     type: 'boundary-case',
-    match: /^????$/i,
+    match: /^????$/,
     extract: () => ({
       isBoundarySection: true
     })
   },
-  
+
+  // 6. ??????
   {
     type: 'task',
-    match: /^-\s*\[\s*\]\s*(.+)$/,
-    extract: (text: string) => {
-      const match = text.match(/^-\s*\[\s*\]\s*(.+)$/)
+    match: /^-\s*\[\s*([x ])\s*\]\s+(.+)$/i,
+    extract: (text) => {
+      const match = text.match(/^-\s*\[\s*([x ])\s*\]\s+(.+)$/i)
       if (!match) return {}
-      
       return {
-        taskDescription: match[1].trim(),
-        completed: false
+        taskDescription: match[2].trim(),
+        completed: match[1].toLowerCase() === 'x',
+        isTask: true
       }
     }
   },
-  
-  {
-    type: 'task',
-    match: /^-\s*\[[xX]\]\s*(.+)$/,
-    extract: (text: string) => {
-      const match = text.match(/^-\s*\[[xX]\]\s*(.+)$/)
-      if (!match) return {}
-      
-      return {
-        taskDescription: match[1].trim(),
-        completed: true
-      }
-    }
-  },
-  
+
+  // 7. ?????????????????
   {
     type: 'priority-marker',
     match: /?????(P\d+)?/,
-    extract: (text: string) => {
+    extract: (text) => {
       const match = text.match(/?????(P\d+)?/)
       if (!match) return {}
-      
       return {
         priority: match[1]
       }
@@ -109,54 +100,37 @@ export const SPEC_KIT_PATTERNS: SpecKitPattern[] = [
 ]
 
 /**
- * ??????????
+ * ???????????
  * @param type - ????
- * @returns ??????emoji ????
+ * @returns ?????
  */
-export function getNodeIcon(type: SpecKitPatternType | string): string {
+export function getNodeIcon(type: string): string {
   const iconMap: Record<string, string> = {
     'user-story': '??',
-    'acceptance-scenario': '??',
+    'acceptance-scenario': '?',
     'functional-requirement': '??',
-    'success-criteria': '?',
+    'success-criteria': '??',
     'boundary-case': '??',
     'task': '??',
-    'heading': '??',
-    'section': '??',
-    'default': '??'
+    'heading': '??'
   }
   
-  return iconMap[type] || iconMap['default']
+  return iconMap[type] || '??'
 }
 
 /**
- * ???????????
+ * ???????
  * @param priority - ????P1/P2/P3?
- * @returns CSS ??
- */
-export function getPriorityClassName(priority?: string): string {
-  if (!priority) return ''
-  
-  const classMap: Record<string, string> = {
-    'P1': 'priority-high',
-    'P2': 'priority-medium',
-    'P3': 'priority-low'
-  }
-  
-  return classMap[priority] || ''
-}
-
-/**
- * ?????????
- * @param priority - ???
- * @returns ???????
+ * @returns ????
  */
 export function getPriorityColor(priority?: string): string {
+  if (!priority) return '#ccc'
+  
   const colorMap: Record<string, string> = {
     'P1': '#ff4d4f',  // ??
     'P2': '#fa8c16',  // ??
     'P3': '#1890ff'   // ??
   }
   
-  return priority ? (colorMap[priority] || '#d9d9d9') : '#d9d9d9'
+  return colorMap[priority] || '#ccc'
 }

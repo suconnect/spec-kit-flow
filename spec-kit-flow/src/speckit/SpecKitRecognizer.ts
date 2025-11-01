@@ -3,7 +3,7 @@
  * ?? spec-kit ???????????????
  */
 
-import { SPEC_KIT_PATTERNS } from './patterns'
+import { SPEC_KIT_PATTERNS, getNodeIcon } from './patterns'
 import type { SpecKitFlowNode } from '../types/speckit'
 
 /**
@@ -12,8 +12,8 @@ import type { SpecKitFlowNode } from '../types/speckit'
 export class SpecKitRecognizer {
   /**
    * ??????? spec-kit ??
-   * @param node - flowgram ??
-   * @returns ????????? spec-kit ????
+   * @param node - SpecKitFlowNode
+   * @returns ????????????????
    */
   recognize(node: SpecKitFlowNode): SpecKitFlowNode {
     const text = node.data.label || ''
@@ -21,44 +21,43 @@ export class SpecKitRecognizer {
     // ????????
     for (const pattern of SPEC_KIT_PATTERNS) {
       if (pattern.match.test(text)) {
-        // ?????
         const metadata = pattern.extract(text)
         
-        // ?????????????????
-        if (pattern.type !== 'priority-marker') {
-          node.type = pattern.type
-        }
+        // ??????
+        node.type = pattern.type
         
-        // ???????? data
+        // ?????? node.data
         node.data = {
           ...node.data,
           ...metadata
         }
         
-        // ???????????????????
-        if (pattern.type === 'user-story' && metadata.priority) {
-          node.data.priority = metadata.priority as 'P1' | 'P2' | 'P3'
+        // ??????????
+        if (!node.data.icon) {
+          node.data.icon = getNodeIcon(pattern.type)
         }
         
-        // ???????????
+        // ??????????????
+        if (metadata.priority) {
+          node.data.priority = this.normalizePriority(metadata.priority as string)
+        }
+        
+        // ???????????????????
         break
       }
     }
     
-    // ???????????????????????
-    if (!node.data.priority) {
-      const priorityMatch = text.match(/?????(P\d+)?/)
-      if (priorityMatch) {
-        node.data.priority = priorityMatch[1] as 'P1' | 'P2' | 'P3'
-      }
+    // ????????? heading???????
+    if (node.type === 'heading' && !node.data.icon) {
+      node.data.icon = getNodeIcon('heading')
     }
     
     return node
   }
 
   /**
-   * ??????
-   * @param nodes - flowgram ????
+   * ????????
+   * @param nodes - SpecKitFlowNode[]
    * @returns ????????
    */
   recognizeAll(nodes: SpecKitFlowNode[]): SpecKitFlowNode[] {
@@ -66,48 +65,28 @@ export class SpecKitRecognizer {
   }
 
   /**
-   * ????????????
-   * @param text - ??
-   * @param patternType - ?????????????????
+   * ????????
+   * @param priority - ??????
+   * @returns ?????????P1/P2/P3?
+   */
+  private normalizePriority(priority: string): 'P1' | 'P2' | 'P3' | undefined {
+    const normalized = priority.toUpperCase().trim()
+    
+    if (normalized === 'P1' || normalized === 'P0') return 'P1'
+    if (normalized === 'P2') return 'P2'
+    if (normalized === 'P3') return 'P3'
+    
+    return undefined
+  }
+
+  /**
+   * ??????? spec-kit ????
+   * @param node - SpecKitFlowNode
+   * @param type - ??????
    * @returns ????
    */
-  matches(text: string, patternType?: string): boolean {
-    const patterns = patternType
-      ? SPEC_KIT_PATTERNS.filter(p => p.type === patternType)
-      : SPEC_KIT_PATTERNS
-    
-    return patterns.some(pattern => pattern.match.test(text))
-  }
-
-  /**
-   * ?????????
-   * @param text - ??
-   * @returns ?????
-   */
-  extractMetadata(text: string): Record<string, any> {
-    for (const pattern of SPEC_KIT_PATTERNS) {
-      if (pattern.match.test(text)) {
-        return pattern.extract(text)
-      }
-    }
-    
-    return {}
-  }
-
-  /**
-   * ????????
-   * @param nodes - ????
-   * @returns ??????
-   */
-  getNodeTypeStats(nodes: SpecKitFlowNode[]): Record<string, number> {
-    const stats: Record<string, number> = {}
-    
-    nodes.forEach(node => {
-      const type = node.type || 'unknown'
-      stats[type] = (stats[type] || 0) + 1
-    })
-    
-    return stats
+  isNodeType(node: SpecKitFlowNode, type: string): boolean {
+    return node.type === type
   }
 
   /**
@@ -120,13 +99,53 @@ export class SpecKitRecognizer {
   }
 
   /**
-   * ?????????
+   * ???????????
+   * @param nodes - ????
+   * @returns ?????????
+   */
+  getFunctionalRequirements(nodes: SpecKitFlowNode[]): SpecKitFlowNode[] {
+    return nodes.filter(node => node.type === 'functional-requirement')
+  }
+
+  /**
+   * ????????
    * @param nodes - ????
    * @param priority - ????P1/P2/P3?
    * @returns ????????
    */
   filterByPriority(nodes: SpecKitFlowNode[], priority: 'P1' | 'P2' | 'P3'): SpecKitFlowNode[] {
     return nodes.filter(node => node.data.priority === priority)
+  }
+
+  /**
+   * ????????
+   * @param nodes - ????
+   * @returns ????
+   */
+  getStatistics(nodes: SpecKitFlowNode[]): {
+    total: number
+    byType: Record<string, number>
+    byPriority: Record<string, number>
+  } {
+    const stats = {
+      total: nodes.length,
+      byType: {} as Record<string, number>,
+      byPriority: {} as Record<string, number>
+    }
+
+    nodes.forEach(node => {
+      // ????
+      const type = node.type || 'unknown'
+      stats.byType[type] = (stats.byType[type] || 0) + 1
+
+      // ?????
+      if (node.data.priority) {
+        const priority = node.data.priority
+        stats.byPriority[priority] = (stats.byPriority[priority] || 0) + 1
+      }
+    })
+
+    return stats
   }
 }
 
