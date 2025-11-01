@@ -28,7 +28,7 @@
     "lint:fix": "eslint ./src --fix",
     "ts-check": "tsc --noEmit",
     "start": "cross-env NODE_ENV=development rsbuild dev --open",
-    "test": "exit",
+    "test": "node src/adapters/__tests__/run-tests.js",
     "test:cov": "exit",
     "watch": "exit 0"
   },
